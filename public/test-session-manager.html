@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionManager Tests - TechVault</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .test-pass {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .test-fail {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .test-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .test-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .run-tests-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .run-tests-btn:hover {
+            background: #2980b9;
+        }
+        
+        .clear-storage-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .clear-storage-btn:hover {
+            background: #c0392b;
+        }
+        
+        .test-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>SessionManager Unit Tests</h1>
+            <p>Testing secure localStorage token management, expiration validation, and cross-tab synchronization</p>
+        </div>
+        
+        <button class="run-tests-btn" onclick="runAllTests()">Run All Tests</button>
+        <button class="clear-storage-btn" onclick="clearTestStorage()">Clear Storage</button>
+        
+        <div class="test-stats" id="testStats" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-number" id="totalTests">0</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="passedTests">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="failedTests">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+        </div>
+        
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Include dependencies -->
+    <script src="js/utils.js"></script>
+    <script src="js/sessionManager.js"></script>
+
+    <script>
+        // Test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+                this.currentSuite = '';
+            }
+
+            describe(suiteName, testFn) {
+                this.currentSuite = suiteName;
+                testFn();
+            }
+
+            test(testName, testFn) {
+                this.tests.push({
+                    suite: this.currentSuite,
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async runAll() {
+                this.results = [];
+                const resultsContainer = document.getElementById('testResults');
+                resultsContainer.innerHTML = '';
+
+                let passed = 0;
+                let failed = 0;
+
+                for (const test of this.tests) {
+                    try {
+                        await test.fn();
+                        this.logResult('PASS', test.suite, test.name, '✅ Test passed');
+                        passed++;
+                    } catch (error) {
+                        this.logResult('FAIL', test.suite, test.name, `❌ ${error.message}`);
+                        failed++;
+                    }
+                }
+
+                this.updateStats(this.tests.length, passed, failed);
+                return { total: this.tests.length, passed, failed };
+            }
+
+            logResult(status, suite, testName, message) {
+                const resultsContainer = document.getElementById('testResults');
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result test-${status.toLowerCase() === 'pass' ? 'pass' : 'fail'}`;
+                resultDiv.innerHTML = `
+                    <strong>[${suite}] ${testName}</strong><br>
+                    ${message}
+                `;
+                resultsContainer.appendChild(resultDiv);
+            }
+
+            updateStats(total, passed, failed) {
+                document.getElementById('testStats').style.display = 'flex';
+                document.getElementById('totalTests').textContent = total;
+                document.getElementById('passedTests').textContent = passed;
+                document.getElementById('failedTests').textContent = failed;
+            }
+
+            expect(actual) {
+                return {
+                    toBe: (expected) => {
+                        if (actual !== expected) {
+                            throw new Error(`Expected ${expected}, but got ${actual}`);
+                        }
+                    },
+                    toEqual: (expected) => {
+                        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                            throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`);
+                        }
+                    },
+                    toBeTruthy: () => {
+                        if (!actual) {
+                            throw new Error(`Expected truthy value, but got ${actual}`);
+                        }
+                    },
+                    toBeFalsy: () => {
+                        if (actual) {
+                            throw new Error(`Expected falsy value, but got ${actual}`);
+                        }
+                    },
+                    toBeNull: () => {
+                        if (actual !== null) {
+                            throw new Error(`Expected null, but got ${actual}`);
+                        }
+                    },
+                    toContain: (expected) => {
+                        if (!actual || !actual.includes(expected)) {
+                            throw new Error(`Expected ${actual} to contain ${expected}`);
+                        }
+                    },
+                    toThrow: () => {
+                        let threw = false;
+                        try {
+                            if (typeof actual === 'function') {
+                                actual();
+                            }
+                        } catch (e) {
+                            threw = true;
+                        }
+                        if (!threw) {
+                            throw new Error('Expected function to throw an error');
+                        }
+                    }
+                };
+            }
+        }
+
+        const testRunner = new TestRunner();
+
+        // Mock JWT token for testing
+        function createMockJWT(payload = {}, expiresInHours = 24) {
+            const header = { alg: 'HS256', typ: 'JWT' };
+            const defaultPayload = {
+                userId: 1,
+                username: 'testuser',
+                email: 'test@example.com',
+                exp: Math.floor(Date.now() / 1000) + (expiresInHours * 60 * 60),
+                iat: Math.floor(Date.now() / 1000)
+            };
+            
+            const finalPayload = { ...defaultPayload, ...payload };
+            
+            // Simple base64 encoding (not cryptographically secure, just for testing)
+            const encodedHeader = btoa(JSON.stringify(header));
+            const encodedPayload = btoa(JSON.stringify(finalPayload));
+            const signature = 'mock-signature';
+            
+            return `${encodedHeader}.${encodedPayload}.${signature}`;
+        }
+
+        // Test suites
+        testRunner.describe('SessionManager Token Storage', () => {
+            testRunner.test('should store authentication token successfully', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                const mockUser = { id: 1, username: 'testuser', email: 'test@example.com' };
+                
+                sessionManager.storeAuthToken(mockToken, mockUser);
+                
+                const storedToken = sessionManager.getAuthToken();
+                const storedUser = sessionManager.getUserData();
+                
+                testRunner.expect(storedToken).toBe(mockToken);
+                testRunner.expect(storedUser).toEqual(mockUser);
+            });
+
+            testRunner.test('should throw error when storing invalid token', () => {
+                const sessionManager = new SessionManager();
+                
+                testRunner.expect(() => {
+                    sessionManager.storeAuthToken(null);
+                }).toThrow();
+            });
+
+            testRunner.test('should return null for non-existent token', () => {
+                const sessionManager = new SessionManager();
+                sessionManager.clearAuthData();
+                
+                const token = sessionManager.getAuthToken();
+                testRunner.expect(token).toBeNull();
+            });
+        });
+
+        testRunner.describe('SessionManager Token Validation', () => {
+            testRunner.test('should validate session with valid token', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                
+                sessionManager.storeAuthToken(mockToken);
+                
+                const isValid = sessionManager.isSessionValid();
+                testRunner.expect(isValid).toBeTruthy();
+            });
+
+            testRunner.test('should invalidate expired token', () => {
+                const sessionManager = new SessionManager();
+                const expiredToken = createMockJWT({}, -1); // Expired 1 hour ago
+                
+                sessionManager.storeAuthToken(expiredToken);
+                
+                const isValid = sessionManager.isSessionValid();
+                testRunner.expect(isValid).toBeFalsy();
+            });
+
+            testRunner.test('should return correct expiration time', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                
+                sessionManager.storeAuthToken(mockToken);
+                
+                const expiration = sessionManager.getTokenExpiration();
+                testRunner.expect(expiration).toBeTruthy();
+                testRunner.expect(expiration instanceof Date).toBeTruthy();
+            });
+        });
+
+        testRunner.describe('SessionManager Data Management', () => {
+            testRunner.test('should clear all authentication data', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                const mockUser = { id: 1, username: 'testuser' };
+                
+                sessionManager.storeAuthToken(mockToken, mockUser);
+                sessionManager.clearAuthData();
+                
+                const token = sessionManager.getAuthToken();
+                const userData = sessionManager.getUserData();
+                
+                testRunner.expect(token).toBeNull();
+                testRunner.expect(userData).toBeNull();
+            });
+
+            testRunner.test('should update user data successfully', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                const initialUser = { id: 1, username: 'testuser', email: 'test@example.com' };
+                const updatedUser = { id: 1, username: 'testuser', email: 'updated@example.com', fullName: 'Test User' };
+                
+                sessionManager.storeAuthToken(mockToken, initialUser);
+                sessionManager.updateUserData(updatedUser);
+                
+                const userData = sessionManager.getUserData();
+                testRunner.expect(userData).toEqual(updatedUser);
+            });
+
+            testRunner.test('should return correct session info', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                const mockUser = { id: 1, username: 'testuser' };
+                
+                sessionManager.storeAuthToken(mockToken, mockUser);
+                
+                const sessionInfo = sessionManager.getSessionInfo();
+                
+                testRunner.expect(sessionInfo.isAuthenticated).toBeTruthy();
+                testRunner.expect(sessionInfo.token).toBe(mockToken);
+                testRunner.expect(sessionInfo.userData).toEqual(mockUser);
+                testRunner.expect(sessionInfo.expiresAt instanceof Date).toBeTruthy();
+            });
+        });
+
+        testRunner.describe('SessionManager Authentication Status', () => {
+            testRunner.test('should return true for authenticated user', () => {
+                const sessionManager = new SessionManager();
+                const mockToken = createMockJWT();
+                
+                sessionManager.storeAuthToken(mockToken);
+                
+                const isAuthenticated = sessionManager.isAuthenticated();
+                testRunner.expect(isAuthenticated).toBeTruthy();
+            });
+
+            testRunner.test('should return false for unauthenticated user', () => {
+                const sessionManager = new SessionManager();
+                sessionManager.clearAuthData();
+                
+                const isAuthenticated = sessionManager.isAuthenticated();
+                testRunner.expect(isAuthenticated).toBeFalsy();
+            });
+
+            testRunner.test('should return false for expired session', () => {
+                const sessionManager = new SessionManager();
+                const expiredToken = createMockJWT({}, -1);
+                
+                sessionManager.storeAuthToken(expiredToken);
+                
+                const isAuthenticated = sessionManager.isAuthenticated();
+                testRunner.expect(isAuthenticated).toBeFalsy();
+            });
+        });
+
+        testRunner.describe('SessionManager Event System', () => {
+            testRunner.test('should register and trigger event listeners', (done) => {
+                const sessionManager = new SessionManager();
+                let eventTriggered = false;
+                
+                sessionManager.addEventListener('sessionExpired', (data) => {
+                    eventTriggered = true;
+                    testRunner.expect(data.reason).toBe('test');
+                });
+                
+                // Manually trigger event for testing
+                sessionManager.emitEvent('sessionExpired', { reason: 'test' });
+                
+                // Give event time to process
+                setTimeout(() => {
+                    testRunner.expect(eventTriggered).toBeTruthy();
+                }, 10);
+            });
+
+            testRunner.test('should remove event listeners', () => {
+                const sessionManager = new SessionManager();
+                let eventTriggered = false;
+                
+                const callback = () => { eventTriggered = true; };
+                
+                sessionManager.addEventListener('sessionExpired', callback);
+                sessionManager.removeEventListener('sessionExpired', callback);
+                sessionManager.emitEvent('sessionExpired', {});
+                
+                testRunner.expect(eventTriggered).toBeFalsy();
+            });
+        });
+
+        testRunner.describe('SessionManager JWT Parsing', () => {
+            testRunner.test('should parse JWT token correctly', () => {
+                const sessionManager = new SessionManager();
+                const payload = { userId: 123, username: 'testuser', exp: Math.floor(Date.now() / 1000) + 3600 };
+                const mockToken = createMockJWT(payload);
+                
+                const parsedPayload = sessionManager.parseJWT(mockToken);
+                
+                testRunner.expect(parsedPayload.userId).toBe(123);
+                testRunner.expect(parsedPayload.username).toBe('testuser');
+            });
+
+            testRunner.test('should handle invalid JWT gracefully', () => {
+                const sessionManager = new SessionManager();
+                const invalidToken = 'invalid.jwt.token';
+                
+                const parsedPayload = sessionManager.parseJWT(invalidToken);
+                
+                testRunner.expect(typeof parsedPayload).toBe('object');
+            });
+        });
+
+        // Test runner functions
+        async function runAllTests() {
+            const button = document.querySelector('.run-tests-btn');
+            button.disabled = true;
+            button.textContent = 'Running Tests...';
+            
+            try {
+                const results = await testRunner.runAll();
+                
+                // Show summary
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = `test-result ${results.failed === 0 ? 'test-pass' : 'test-warning'}`;
+                summaryDiv.innerHTML = `
+                    <strong>Test Summary:</strong><br>
+                    Total: ${results.total} | Passed: ${results.passed} | Failed: ${results.failed}
+                `;
+                document.getElementById('testResults').appendChild(summaryDiv);
+                
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Run All Tests';
+            }
+        }
+
+        function clearTestStorage() {
+            localStorage.clear();
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'test-result test-info';
+            infoDiv.innerHTML = '<strong>Storage Cleared:</strong><br>All localStorage data has been cleared.';
+            
+            const resultsContainer = document.getElementById('testResults');
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(infoDiv);
+            
+            // Hide stats
+            document.getElementById('testStats').style.display = 'none';
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('SessionManager test page loaded');
+        });
+    </script>
+</body>
+</html>

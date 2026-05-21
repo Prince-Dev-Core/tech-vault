@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavigationController Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-suite {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f9f9f9;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-case.pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-case.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-case.skip {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+        }
+        .summary h2 {
+            margin-top: 0;
+            color: #004085;
+        }
+        .stat {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: bold;
+        }
+        .stat.pass { color: #28a745; }
+        .stat.fail { color: #dc3545; }
+        .stat.skip { color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>NavigationController Test Runner</h1>
+        <p>This page runs the NavigationController tests in a browser environment.</p>
+        
+        <div id="test-output"></div>
+        
+        <div class="summary">
+            <h2>Test Summary</h2>
+            <div class="stat pass">✓ Passed: <span id="passed-count">0</span></div>
+            <div class="stat fail">✗ Failed: <span id="failed-count">0</span></div>
+            <div class="stat skip">⊘ Skipped: <span id="skipped-count">0</span></div>
+            <div style="margin-top: 10px;">
+                <strong>Total: <span id="total-count">0</span></strong>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/navigationController.js"></script>
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.suites = [];
+                this.currentSuite = null;
+                this.results = {
+                    passed: 0,
+                    failed: 0,
+                    skipped: 0
+                };
+            }
+
+            describe(name, fn) {
+                this.currentSuite = {
+                    name: name,
+                    tests: []
+                };
+                fn();
+                this.suites.push(this.currentSuite);
+            }
+
+            test(name, fn) {
+                if (this.currentSuite) {
+                    this.currentSuite.tests.push({ name, fn });
+                }
+            }
+
+            expect(value) {
+                return {
+                    toBe: (expected) => {
+                        if (value !== expected) {
+                            throw new Error(`Expected ${expected} but got ${value}`);
+                        }
+                    },
+                    toEqual: (expected) => {
+                        if (JSON.stringify(value) !== JSON.stringify(expected)) {
+                            throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(value)}`);
+                        }
+                    },
+                    toBeTruthy: () => {
+                        if (!value) {
+                            throw new Error(`Expected truthy value but got ${value}`);
+                        }
+                    },
+                    toBeFalsy: () => {
+                        if (value) {
+                            throw new Error(`Expected falsy value but got ${value}`);
+                        }
+                    },
+                    toContain: (item) => {
+                        if (!value.includes(item)) {
+                            throw new Error(`Expected ${value} to contain ${item}`);
+                        }
+                    }
+                };
+            }
+
+            run() {
+                const output = document.getElementById('test-output');
+                
+                this.suites.forEach(suite => {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h3>${suite.name}</h3>`;
+                    
+                    suite.tests.forEach(test => {
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+                        
+                        try {
+                            // Setup
+                            document.body.innerHTML = `
+                                <nav class="side-nav" id="sideNav">
+                                    <div class="nav-header">
+                                        <div class="nav-brand">TechVault</div>
+                                        <button class="nav-toggle" id="navToggle">×</button>
+                                    </div>
+                                    <div class="nav-menu">
+                                        <div class="nav-section">
+                                            <a class="nav-item active" data-page="dashboard" href="#dashboard">
+                                                <i class="fas fa-home"></i>
+                                                <span>Dashboard</span>
+                                            </a>
+                                            <a class="nav-item" data-page="tools" href="#tools">
+                                                <i class="fas fa-tools"></i>
+                                                <span>Tools</span>
+                                            </a>
+                                            <a class="nav-item" data-page="orders" href="#orders">
+                                                <i class="fas fa-shopping-bag"></i>
+                                                <span>Orders</span>
+                                            </a>
+                                            <a class="nav-item" data-page="profile" href="#profile">
+                                                <i class="fas fa-user"></i>
+                                                <span>Profile</span>
+                                            </a>
+                                            <a class="nav-item" data-page="settings" href="#settings">
+                                                <i class="fas fa-cog"></i>
+                                                <span>Settings</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="nav-footer">
+                                        <button class="logout-btn" id="logoutBtn">Log Out</button>
+                                    </div>
+                                </nav>
+                                <main class="main-content" id="mainContent">
+                                    <div class="top-bar">
+                                        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                                        <div class="top-actions">
+                                            <button class="mobile-nav-toggle" id="mobileNavToggle">
+                                                <i class="fas fa-bars"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="content-header">
+                                        <div class="search-filter-bar">
+                                            <div class="search-box">
+                                                <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+                                            </div>
+                                            <select class="filter-dropdown" id="categoryFilter">
+                                                <option value="">All Categories</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="content-body">
+                                        <div class="section-title">
+                                            <span id="sectionTitle">Featured Tools</span>
+                                        </div>
+                                        <div class="items-grid" id="itemsGrid">
+                                            <!-- Items will be loaded here -->
+                                        </div>
+                                    </div>
+                                </main>
+                                <div class="nav-overlay" id="navOverlay"></div>
+                            `;
+                            
+                            // Run test
+                            test.fn.call(this);
+                            
+                            testDiv.className = 'test-case pass';
+                            testDiv.textContent = '✓ ' + test.name;
+                            this.results.passed++;
+                        } catch (error) {
+                            testDiv.className = 'test-case fail';
+                            testDiv.textContent = '✗ ' + test.name + ' - ' + error.message;
+                            this.results.failed++;
+                        }
+                        
+                        suiteDiv.appendChild(testDiv);
+                    });
+                    
+                    output.appendChild(suiteDiv);
+                });
+                
+                // Update summary
+                document.getElementById('passed-count').textContent = this.results.passed;
+                document.getElementById('failed-count').textContent = this.results.failed;
+                document.getElementById('skipped-count').textContent = this.results.skipped;
+                document.getElementById('total-count').textContent = 
+                    this.results.passed + this.results.failed + this.results.skipped;
+            }
+        }
+
+        // Create test runner
+        const runner = new TestRunner();
+
+        // Define tests
+        runner.describe('NavigationController - Initialization', function() {
+            runner.test('should initialize successfully with valid DOM elements', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                runner.expect(nc.isInitialized).toBeTruthy();
+            });
+
+            runner.test('should cache DOM elements on initialization', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                runner.expect(nc.elements.sideNav).toBeTruthy();
+                runner.expect(nc.elements.mainContent).toBeTruthy();
+                runner.expect(nc.elements.pageTitle).toBeTruthy();
+            });
+        });
+
+        runner.describe('NavigationController - Page Navigation', function() {
+            runner.test('should navigate to a valid page', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.navigateToPage('tools');
+                runner.expect(nc.getCurrentPage()).toBe('tools');
+            });
+
+            runner.test('should update active state when navigating', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.navigateToPage('tools');
+                const activeItem = document.querySelector('[data-page="tools"]');
+                runner.expect(activeItem.classList.contains('active')).toBeTruthy();
+            });
+
+            runner.test('should update page title on navigation', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.navigateToPage('tools');
+                runner.expect(document.getElementById('pageTitle').textContent).toBe('All Tools');
+            });
+
+            runner.test('should track previous page', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.navigateToPage('tools');
+                nc.navigateToPage('orders');
+                runner.expect(nc.getPreviousPage()).toBe('tools');
+            });
+        });
+
+        runner.describe('NavigationController - Active State Management', function() {
+            runner.test('should update active state for specified item', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.updateActiveState('tools');
+                const activeItem = document.querySelector('[data-page="tools"]');
+                runner.expect(activeItem.classList.contains('active')).toBeTruthy();
+            });
+
+            runner.test('should remove active state from all other items', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.updateActiveState('tools');
+                const allItems = document.querySelectorAll('.nav-item');
+                let activeCount = 0;
+                allItems.forEach(item => {
+                    if (item.classList.contains('active')) {
+                        activeCount++;
+                    }
+                });
+                runner.expect(activeCount).toBe(1);
+            });
+        });
+
+        runner.describe('NavigationController - Mobile Navigation', function() {
+            runner.test('should open mobile menu', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.openMobileMenu();
+                runner.expect(nc.isMobileMenuOpen()).toBeTruthy();
+                runner.expect(document.getElementById('sideNav').classList.contains('mobile-open')).toBeTruthy();
+            });
+
+            runner.test('should close mobile menu', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.openMobileMenu();
+                nc.closeMobileMenu();
+                runner.expect(nc.isMobileMenuOpen()).toBeFalsy();
+                runner.expect(document.getElementById('sideNav').classList.contains('mobile-open')).toBeFalsy();
+            });
+
+            runner.test('should toggle mobile menu', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                runner.expect(nc.isMobileMenuOpen()).toBeFalsy();
+                nc.toggleMobileMenu();
+                runner.expect(nc.isMobileMenuOpen()).toBeTruthy();
+                nc.toggleMobileMenu();
+                runner.expect(nc.isMobileMenuOpen()).toBeFalsy();
+            });
+        });
+
+        runner.describe('NavigationController - Event Listeners', function() {
+            runner.test('should emit pageChange event on navigation', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                let eventFired = false;
+                nc.addEventListener('pageChange', (data) => {
+                    eventFired = true;
+                    runner.expect(data.currentPage).toBe('tools');
+                });
+                nc.navigateToPage('tools');
+                runner.expect(eventFired).toBeTruthy();
+            });
+
+            runner.test('should support multiple event listeners', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                let count = 0;
+                nc.addEventListener('pageChange', () => count++);
+                nc.addEventListener('pageChange', () => count++);
+                nc.navigateToPage('tools');
+                runner.expect(count).toBe(2);
+            });
+        });
+
+        runner.describe('NavigationController - Navigation State', function() {
+            runner.test('should return current navigation state', function() {
+                const nc = new NavigationController();
+                nc.initialize();
+                nc.navigateToPage('tools');
+                const state = nc.getNavigationState();
+                runner.expect(state.currentPage).toBe('tools');
+                runner.expect(state.previousPage).toBe('dashboard');
+            });
+
+            runner.test('should get page configuration', function() {
+                const nc = new NavigationController();
+                const config = nc.getPageConfig('tools');
+                runner.expect(config.title).toBe('All Tools');
+                runner.expect(config.icon).toBe('fa-tools');
+            });
+        });
+
+        runner.describe('NavigationController - Content Caching', function() {
+            runner.test('should cache content for a page', function() {
+                const nc = new NavigationController();
+                const content = '<div>Test Content</div>';
+                nc.cacheContent('tools', content);
+                runner.expect(nc.getCachedContent('tools')).toBe(content);
+            });
+
+            runner.test('should clear content cache', function() {
+                const nc = new NavigationController();
+                nc.cacheContent('tools', '<div>Test</div>');
+                nc.clearContentCache();
+                runner.expect(nc.getCachedContent('tools')).toBe(null);
+            });
+        });
+
+        // Run all tests
+        runner.run();
+    </script>
+</body>
+</html>

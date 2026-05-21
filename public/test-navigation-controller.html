@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavigationController Tests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #f1f5f9;
+            padding: 2rem;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 2rem;
+            color: #00d4ff;
+        }
+        .test-section {
+            background: #12121a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .test-case {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #1e293b;
+            background: #1a1a2e;
+            border-radius: 4px;
+        }
+        .test-case.pass {
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .test-case.fail {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .test-result {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        .pass-icon {
+            color: #10b981;
+            margin-right: 0.5rem;
+        }
+        .fail-icon {
+            color: #ef4444;
+            margin-right: 0.5rem;
+        }
+        .summary {
+            background: #12121a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .summary-stat {
+            display: inline-block;
+            margin-right: 2rem;
+            font-size: 1.1rem;
+        }
+        .summary-stat.pass {
+            color: #10b981;
+        }
+        .summary-stat.fail {
+            color: #ef4444;
+        }
+        .demo-section {
+            background: #12121a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .demo-button {
+            padding: 0.75rem 1.5rem;
+            background: #00d4ff;
+            border: none;
+            border-radius: 8px;
+            color: #0a0a0f;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        .demo-button:hover {
+            background: #00a8cc;
+        }
+        .demo-output {
+            background: #1a1a2e;
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>NavigationController Unit Tests</h1>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="summary" id="summary"></div>
+
+        <div class="demo-section">
+            <h2>Interactive Demo</h2>
+            <button class="demo-button" onclick="demoNavigate('tools')">Navigate to Tools</button>
+            <button class="demo-button" onclick="demoNavigate('orders')">Navigate to Orders</button>
+            <button class="demo-button" onclick="demoToggleMobileMenu()">Toggle Mobile Menu</button>
+            <button class="demo-button" onclick="demoGetState()">Get Navigation State</button>
+            <div class="demo-output" id="demoOutput"></div>
+        </div>
+    </div>
+
+    <!-- Mock Dashboard HTML for testing -->
+    <div style="display: none;">
+        <nav class="side-nav" id="sideNav">
+            <div class="nav-header">
+                <div class="nav-brand">TechVault</div>
+                <button class="nav-toggle" id="navToggle">×</button>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-section">
+                    <a class="nav-item active" data-page="dashboard" href="#dashboard">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="nav-item" data-page="tools" href="#tools">
+                        <i class="fas fa-tools"></i>
+                        <span>Tools</span>
+                    </a>
+                    <a class="nav-item" data-page="orders" href="#orders">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Orders</span>
+                    </a>
+                    <a class="nav-item" data-page="profile" href="#profile">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a class="nav-item" data-page="settings" href="#settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </div>
+            <div class="nav-footer">
+                <button class="logout-btn" id="logoutBtn">Log Out</button>
+            </div>
+        </nav>
+        <main class="main-content" id="mainContent">
+            <div class="top-bar">
+                <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                <div class="top-actions">
+                    <button class="mobile-nav-toggle" id="mobileNavToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="content-header">
+                <div class="search-filter-bar">
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+                    </div>
+                    <select class="filter-dropdown" id="categoryFilter">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </div>
+            <div class="content-body">
+                <div class="section-title">
+                    <span id="sectionTitle">Featured Tools</span>
+                </div>
+                <div class="items-grid" id="itemsGrid"></div>
+            </div>
+        </main>
+        <div class="nav-overlay" id="navOverlay"></div>
+    </div>
+
+    <script src="/js/navigationController.js"></script>
+    <script>
+        // Test runner
+        let testResults = [];
+        let navigationController;
+
+        function addTest(name, passed, message = '') {
+            testResults.push({ name, passed, message });
+        }
+
+        function runTests() {
+            testResults = [];
+
+            // Test 1: Initialization
+            try {
+                navigationController = new NavigationController();
+                navigationController.initialize();
+                addTest('Initialization', navigationController.isInitialized === true);
+            } catch (e) {
+                addTest('Initialization', false, e.message);
+            }
+
+            // Test 2: Page Navigation
+            try {
+                navigationController.navigateToPage('tools');
+                addTest('Navigate to Page', navigationController.getCurrentPage() === 'tools');
+            } catch (e) {
+                addTest('Navigate to Page', false, e.message);
+            }
+
+            // Test 3: Active State Update
+            try {
+                navigationController.updateActiveState('orders');
+                const activeItem = document.querySelector('[data-page="orders"]');
+                addTest('Update Active State', activeItem && activeItem.classList.contains('active'));
+            } catch (e) {
+                addTest('Update Active State', false, e.message);
+            }
+
+            // Test 4: Page Title Update
+            try {
+                navigationController.navigateToPage('profile');
+                const title = document.getElementById('pageTitle').textContent;
+                addTest('Update Page Title', title === 'My Profile');
+            } catch (e) {
+                addTest('Update Page Title', false, e.message);
+            }
+
+            // Test 5: Mobile Menu Toggle
+            try {
+                navigationController.openMobileMenu();
+                const isOpen = navigationController.isMobileMenuOpen();
+                navigationController.closeMobileMenu();
+                const isClosed = !navigationController.isMobileMenuOpen();
+                addTest('Mobile Menu Toggle', isOpen && isClosed);
+            } catch (e) {
+                addTest('Mobile Menu Toggle', false, e.message);
+            }
+
+            // Test 6: Event Listeners
+            try {
+                let eventFired = false;
+                navigationController.addEventListener('pageChange', () => {
+                    eventFired = true;
+                });
+                navigationController.navigateToPage('dashboard');
+                addTest('Event Listeners', eventFired === true);
+            } catch (e) {
+                addTest('Event Listeners', false, e.message);
+            }
+
+            // Test 7: Navigation State
+            try {
+                const state = navigationController.getNavigationState();
+                addTest('Get Navigation State', 
+                    state.currentPage && state.previousPage !== undefined && 
+                    state.sidebarCollapsed !== undefined && state.mobileMenuOpen !== undefined
+                );
+            } catch (e) {
+                addTest('Get Navigation State', false, e.message);
+            }
+
+            // Test 8: Content Caching
+            try {
+                navigationController.cacheContent('test', '<div>Test</div>');
+                const cached = navigationController.getCachedContent('test');
+                addTest('Content Caching', cached === '<div>Test</div>');
+            } catch (e) {
+                addTest('Content Caching', false, e.message);
+            }
+
+            // Test 9: Page Configuration
+            try {
+                const config = navigationController.getPageConfig('tools');
+                addTest('Page Configuration', config && config.title === 'All Tools');
+            } catch (e) {
+                addTest('Page Configuration', false, e.message);
+            }
+
+            // Test 10: Scroll Position Reset
+            try {
+                const contentBody = document.querySelector('.content-body');
+                contentBody.scrollTop = 100;
+                navigationController.resetScrollPosition();
+                addTest('Scroll Position Reset', contentBody.scrollTop === 0);
+            } catch (e) {
+                addTest('Scroll Position Reset', false, e.message);
+            }
+
+            displayResults();
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('testResults');
+            const passed = testResults.filter(t => t.passed).length;
+            const failed = testResults.filter(t => !t.passed).length;
+
+            let html = '';
+            testResults.forEach(test => {
+                const className = test.passed ? 'pass' : 'fail';
+                const icon = test.passed ? 
+                    '<span class="pass-icon">✓</span>' : 
+                    '<span class="fail-icon">✗</span>';
+                html += `
+                    <div class="test-case ${className}">
+                        <div class="test-title">${icon}${test.name}</div>
+                        ${test.message ? `<div class="test-result">${test.message}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+
+            // Display summary
+            const summaryDiv = document.getElementById('summary');
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <div class="summary-stat pass">✓ Passed: ${passed}</div>
+                <div class="summary-stat fail">✗ Failed: ${failed}</div>
+                <div class="summary-stat">Total: ${testResults.length}</div>
+                <div class="summary-stat" style="color: #00d4ff;">Success Rate: ${Math.round((passed / testResults.length) * 100)}%</div>
+            `;
+        }
+
+        // Demo functions
+        function demoNavigate(page) {
+            navigationController.navigateToPage(page);
+            const output = document.getElementById('demoOutput');
+            output.textContent = `Navigated to: ${page}\nCurrent Page: ${navigationController.getCurrentPage()}\nPrevious Page: ${navigationController.getPreviousPage()}`;
+        }
+
+        function demoToggleMobileMenu() {
+            navigationController.toggleMobileMenu();
+            const output = document.getElementById('demoOutput');
+            output.textContent = `Mobile Menu Open: ${navigationController.isMobileMenuOpen()}`;
+        }
+
+        function demoGetState() {
+            const state = navigationController.getNavigationState();
+            const output = document.getElementById('demoOutput');
+            output.textContent = JSON.stringify(state, null, 2);
+        }
+
+        // Run tests on page load
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>
