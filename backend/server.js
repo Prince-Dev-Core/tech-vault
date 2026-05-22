@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const supabase = require('./config/supabase');
 const { sendOrderConfirmationEmail } = require('./config/email');
+const { router: authRouter } = require('./routes/auth');
 
 const app = express();
 
@@ -26,6 +27,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Mount auth routes
+app.use('/api/auth', authRouter);
 
 // Email configuration
 const transporter = nodemailer.createTransport({
