@@ -7,7 +7,7 @@ const API_CONFIG = {
     // Detect environment and set appropriate API URL
     BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:3000/api' 
-        : (window.REACT_APP_API_URL || 'https://tech-vault-production.up.railway.app/api'),
+        : (window.REACT_APP_API_URL || 'https://techvault-backend-production.up.railway.app/api'),
     TIMEOUT: 10000, // 10 seconds
     RETRY_ATTEMPTS: 3,
     RETRY_DELAY: 1000 // 1 second
