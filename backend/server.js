@@ -9,28 +9,14 @@ const { router: supabaseAuthRouter } = require('./routes/supabase-auth');
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - Allow all origins for now to debug
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:8000',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:8000',
-      'https://tech-vault-zjch.onrender.com'
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins temporarily
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  preflightContinue: false
 };
 
 // Middleware

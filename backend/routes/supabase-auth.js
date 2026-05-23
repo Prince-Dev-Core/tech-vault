@@ -29,7 +29,7 @@ const authenticateToken = async (req, res, next) => {
 // Sign Up Route
 router.post('/signup', async (req, res) => {
     try {
-        const { email, password, fullName } = req.body;
+        const { email, password, fullName, username } = req.body;
 
         // Validation
         if (!email || !password) {
@@ -57,7 +57,7 @@ router.post('/signup', async (req, res) => {
                 {
                     id: user.id,
                     email: user.email,
-                    full_name: fullName || '',
+                    full_name: fullName || username || '',
                     created_at: new Date().toISOString()
                 }
             ]);
@@ -83,7 +83,7 @@ router.post('/signup', async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                fullName: fullName || ''
+                fullName: fullName || username || ''
             }
         });
     } catch (error) {
@@ -95,15 +95,18 @@ router.post('/signup', async (req, res) => {
 // Login Route
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, username } = req.body;
+        
+        // Use email if provided, otherwise try username (though Supabase auth uses email)
+        const loginEmail = email || username;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
+        if (!loginEmail || !password) {
+            return res.status(400).json({ error: 'Email/username and password are required' });
         }
 
         // Sign in with Supabase Auth
         const { data: { session }, error } = await supabase.auth.signInWithPassword({
-            email,
+            email: loginEmail,
             password
         });
 
