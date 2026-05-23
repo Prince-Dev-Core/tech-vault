@@ -20,11 +20,13 @@ const corsOptions = {
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
 };
 
 // Middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable preflight for all routes
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
